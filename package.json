@@ -6,7 +6,9 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint --fix \"src/**/*.ts\""
   },
   "devDependencies": {
     "@mdi/font": "^7.2.96",
