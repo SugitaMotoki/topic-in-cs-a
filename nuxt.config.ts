@@ -1,7 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   app: {
-    baseURL: "/topic-in-cs-a/"
+    baseURL: "/topic-in-cs-a/",
+    cdnURL: "https://sugitamotoki.github.io/topic-in-cs-a/"
   },
   devtools: { enabled: true },
   ssr: false,
