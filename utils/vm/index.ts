@@ -16,5 +16,5 @@ export const vm = () => {
     vm02,
     vm03,
     vm04,
-  }
+  };
 };
