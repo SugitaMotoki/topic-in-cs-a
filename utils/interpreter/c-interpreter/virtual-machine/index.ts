@@ -10,12 +10,20 @@ export class VirtualMachine {
   /** 出力 */
   private output: string[] = [];
 
+  /** VMの初期化 */
+  private initialize() {
+    this.stack = [];
+    this.pc = 0;
+    this.output = [];
+  }
+
   /**
    * VMの実行
    * @param {Instruction[]} instructions アセンブリ命令列
    * @returns {string[]} 出力
    */
   public execute(instructions: Instruction[]): string[] {
+    this.initialize();
     while (this.pc < instructions.length) {
       const instruction = instructions[this.pc];
       this.methods[instruction.id](instruction.argments);
