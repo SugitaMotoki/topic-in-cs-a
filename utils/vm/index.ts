@@ -10,11 +10,15 @@ import * as vm03 from "./vm03";
 /** 第4回発表（2023/07/07） */
 import * as vm04 from "./vm04";
 
+/** 第5回発表（2023/07/21） */
+import * as vm05 from "./vm05";
+
 export const vm = () => {
   return {
     vm01,
     vm02,
     vm03,
     vm04,
+    vm05,
   };
 };
