@@ -7,6 +7,12 @@ export class VirtualMachine {
   /** プログラムカウンタ */
   private pc = 0;
 
+  /** グローバル変数の名前とidを紐づけるMap */
+  public readonly globalVariableIdMap: Map<string, number> = new Map();
+
+  /** ローカル変数の名前とidを紐づけるMap */
+  public readonly localVariableIdMap: Map<string, number> = new Map();
+
   /** 出力 */
   private output: string[] = [];
 
