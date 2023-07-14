@@ -1,21 +1,24 @@
-import { Instruction, Variable } from "./types";
+import { Instruction } from "./types";
+import { Compiler } from "./compiler";
 import { Assembler } from "./assembler";
 import { VirtualMachine } from "./virtual-machine";
 
 export class CInterpreter {
-  private assembler = new Assembler();
+  private readonly compiler = new Compiler();
+  private readonly assembler = new Assembler();
+  private readonly virtualMachine = new VirtualMachine();
 
-  private virtualMachine = new VirtualMachine();
-
-  private memory: Variable[] = [];
-
-  private initialize() {
-    this.memory = [];
+  public execute(cSourceCode: string): string {
+    const assemblyCode = this.compiler.compileToAssembly(cSourceCode);
+    return this.executeFromAssembly(assemblyCode);
   }
 
-  public execute(sourceCode: string): string {
-    this.initialize();
-    const instructions: Instruction[] = this.assembler.assemble(sourceCode);
+  public executeFromAssembly(assemblyCode: string): string {
+    const instructions: Instruction[] = this.assembler.assemble(
+      assemblyCode,
+      this.virtualMachine.globalVariableIdMap,
+      this.virtualMachine.localVariableIdMap,
+    );
     const output = this.virtualMachine.execute(instructions);
     return output.join("\n");
   }
