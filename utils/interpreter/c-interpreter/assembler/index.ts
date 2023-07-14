@@ -2,13 +2,22 @@ import { Instruction } from "../types";
 
 export class Assembler {
   /**
-   * Cのソースコードをアセンブリ命令列に変換する
-   * @param {string} sourceCode Cのソースコード
-   * @returns {Instruction[]} アセンブリ命令列
+   * アセンブリコードを独自の機械語に変換する
+   * @param {string} assemblyCode
+   * @param {Map<string, number>} globalVariableIdMap - グローバル変数の名前とidを紐づけるMap
+   * @param {Map<string, number>} localVariableIdMap - ローカル変数の名前とidを紐づけるMap
+   * @returns {Instruction[]} 命令オブジェクト群（独自の機械語）
    */
-  public assemble(sourceCode: string): Instruction[] {
-    // HACK: 一旦アセンブリのJSONをパースして返す
-    const assemblyCode = JSON.parse(sourceCode) as Instruction[];
-    return assemblyCode;
+  public assemble(
+    assemblyCode: string,
+    globalVariableIdMap: Map<string, number>,
+    localVariableIdMap: Map<string, number>,
+  ): Instruction[] {
+    globalVariableIdMap.clear();
+    localVariableIdMap.clear();
+
+    // HACK: 一旦空の配列を返す
+    const instructions: Instruction[] = [];
+    return instructions;
   }
 }

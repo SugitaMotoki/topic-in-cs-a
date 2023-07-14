@@ -43,6 +43,7 @@ module.exports = {
     "complexity": "off",
     "no-negated-condition": "off", 
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
+    "lines-between-class-members": ["error", "always", { exceptAfterSingleLine: true }],
     "new-cap": ["error", {
         "capIsNewExceptionPattern": "@*", // Decoratorだけ許可
     }],
