@@ -120,6 +120,72 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.8: `eq`
+   * - スタックの先頭2つの値が等しければ1を、そうでなければ0をスタックに積む
+   * - b === a
+   */
+  private _eq = () => {
+    const a = this._pop();
+    const b = this._pop();
+    this.stack.push(a === b ? 1 : 0);
+  };
+
+  /**
+   * ### No.9: `ne`
+   * - スタックの先頭2つの値が等しくなければ1を、そうでなければ0をスタックに積む
+   * - b !== a
+   */
+  private _ne = () => {
+    const a = this._pop();
+    const b = this._pop();
+    this.stack.push(a !== b ? 1 : 0);
+  };
+
+  /**
+   * ### No.10: `gt`
+   * - スタックの2番目の値が先頭の値より大きければ1を、そうでなければ0をスタックに積む
+   * - b > a
+   */
+  private _gt = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(b > a ? 1 : 0);
+  };
+
+  /**
+   * ### No.11: `ge`
+   * - スタックの2番目の値が先頭の値以上であれば1を、そうでなければ0をスタックに積む
+   * - b >= a
+   */
+  private _ge = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(b >= a ? 1 : 0);
+  };
+
+  /**
+   * ### No.12: `lt`
+   * - スタックの2番目の値が先頭の値より小さければ1を、そうでなければ0をスタックに積む
+   * - b > a
+   */
+  private _lt = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(b < a ? 1 : 0);
+  };
+
+  /**
+   * ### No.13: `le`
+   * - スタックの2番目の値が先頭の値以下であれば1を、そうでなければ0をスタックに積む
+   * - b >= a
+   */
+  private _le = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(b <= a ? 1 : 0);
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
@@ -132,5 +198,11 @@ export class VirtualMachine {
     this._mul,
     this._div,
     this._mod,
+    this._eq,
+    this._ne,
+    this._gt,
+    this._ge,
+    this._lt,
+    this._le,
   ];
 }
