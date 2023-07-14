@@ -9,7 +9,14 @@
       label="Cのソースコード"
       auto-grow
       variant="solo"
-      :model-value="cSample"
+      :model-value="cSourceCode"
+    />
+    <v-textarea
+      name="assembly-code"
+      label="アセンブリコード"
+      auto-grow
+      variant="solo"
+      :model-value="assemblyCode"
     />
     <v-textarea
       name="result"
@@ -22,22 +29,17 @@
 </template>
 
 <script setup lang="ts">
-const cSample = ref("");
-cSample.value = sampleCodes().c.hello;
+const cSourceCode = ref("");
+cSourceCode.value = sampleCodes().c.tiny;
 
-// HACK: 仮の命令列
-const instructions = [
-  { id: 2, argments: [9] },
-  { id: 2, argments: [2] },
-  { id: 1, argments: [] },
-  { id: 0, argments: [] },
-];
-cSample.value = JSON.stringify(instructions);
+const assemblyCode = ref("");
+assemblyCode.value = sampleCodes().assembly.tiny;
 
 const cInterpreter = new (interpreter().CInterpreter)();
+
 const result = ref("");
 const execute = () => {
-  result.value = cInterpreter.execute(cSample.value);
+  result.value = cInterpreter.executeFromAssembly(assemblyCode.value);
 }
 execute();
 </script>
