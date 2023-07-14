@@ -4,6 +4,9 @@ export class VirtualMachine {
   /** スタック */
   private stack: Variable[] = [];
 
+  /** メモリ */
+  private memory: Variable[] = [];
+
   /** プログラムカウンタ */
   private pc = 0;
 
@@ -19,6 +22,7 @@ export class VirtualMachine {
   /** VMの初期化 */
   private initialize() {
     this.stack = [];
+    this.memory = [];
     this.pc = 0;
     this.output = [];
   }
