@@ -62,8 +62,75 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.3: add
+   * スタックの先頭2つの値を足し算する
+   */
+  private _add = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(a + b);
+  };
+
+  /**
+   * ### No.4: sub
+   * スタックの先頭2つの値を引き算する
+   */
+  private _sub = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(b - a);
+  };
+
+  /**
+   * ### No.5: mul
+   * スタックの先頭2つの値を掛け算する
+   */
+  private _mul = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    this.stack.push(a * b);
+  };
+
+  /**
+   * ### No.6: div
+   * スタックの先頭2つの値を割り算する
+   * 0除算の場合はエラー
+   */
+  private _div = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    if (a === 0) {
+      throw new Error("zero division");
+    }
+    this.stack.push(b / a);
+  };
+
+  /**
+   * ### No.7: mod
+   * スタックの先頭2つの値を割り算した余りを求める
+   * 0除算の場合はエラー
+   */
+  private _mod = () => {
+    const a = this._pop() as number;
+    const b = this._pop() as number;
+    if (a === 0) {
+      throw new Error("zero division");
+    }
+    this.stack.push(b % a);
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
-  private methods = [this._print, this._pop, this._push];
+  private methods = [
+    this._print,
+    this._pop,
+    this._push,
+    this._add,
+    this._sub,
+    this._mul,
+    this._div,
+    this._mod,
+  ];
 }
