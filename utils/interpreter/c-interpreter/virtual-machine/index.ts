@@ -190,6 +190,26 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.14: `increment`
+   * - スタックの先頭の値をインクリメントする
+   * - value++
+   */
+  private _increment = () => {
+    const value = this._pop() as number;
+    this.stack.push(value + 1);
+  };
+
+  /**
+   * ### No.15: `decrement`
+   * - スタックの先頭の値をデクリメントする
+   * - value--
+   */
+  private _decrement = () => {
+    const value = this._pop() as number;
+    this.stack.push(value - 1);
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
@@ -208,5 +228,7 @@ export class VirtualMachine {
     /* No.11 */ this._ge,
     /* No.12 */ this._lt,
     /* No.13 */ this._le,
+    /* No.14 */ this._increment,
+    /* No.15 */ this._decrement,
   ];
 }
