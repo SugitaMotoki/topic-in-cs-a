@@ -33,8 +33,8 @@ export class VirtualMachine {
   }
 
   /**
-   * ### No.0: print
-   * スタックの先頭を出力する
+   * ### No.0: `print`
+   * - スタックの先頭を出力する
    */
   private _print = () => {
     const value = this._pop();
@@ -42,8 +42,8 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.1: pop
-   * スタックから値を取り出す
+   * ### No.01: `pop`
+   * - スタックから値を取り出す
    */
   private _pop = () => {
     const value = this.stack.pop();
@@ -54,26 +54,28 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.2: push
-   * スタックに値を積む
+   * ### No.02: `push`
+   * - スタックに値を積む
    */
   private _push = (arg: Variable[]) => {
     this.stack.push(arg[0]);
   };
 
   /**
-   * ### No.3: add
-   * スタックの先頭2つの値を足し算する
+   * ### No.03: `add`
+   * - スタックの先頭2つの値を足し算する
+   * - b + a
    */
   private _add = () => {
     const a = this._pop() as number;
     const b = this._pop() as number;
-    this.stack.push(a + b);
+    this.stack.push(b + a);
   };
 
   /**
-   * ### No.4: sub
-   * スタックの先頭2つの値を引き算する
+   * ### No.04: `sub`
+   * - スタックの先頭2つの値を引き算する
+   * - b - a
    */
   private _sub = () => {
     const a = this._pop() as number;
@@ -82,19 +84,21 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.5: mul
-   * スタックの先頭2つの値を掛け算する
+   * ### No.05: `mul`
+   * - スタックの先頭2つの値を掛け算する
+   * - b * a
    */
   private _mul = () => {
     const a = this._pop() as number;
     const b = this._pop() as number;
-    this.stack.push(a * b);
+    this.stack.push(b * a);
   };
 
   /**
-   * ### No.6: div
-   * スタックの先頭2つの値を割り算する
-   * 0除算の場合はエラー
+   * ### No.06: `div`
+   * - スタックの先頭2つの値を割り算する
+   * - 0除算の場合はエラー
+   * - b / a
    */
   private _div = () => {
     const a = this._pop() as number;
@@ -106,9 +110,9 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.7: mod
-   * スタックの先頭2つの値を割り算した余りを求める
-   * 0除算の場合はエラー
+   * ### No.07: `mod`
+   * - スタックの先頭2つの値を割り算した余りを求める
+   * - 0除算の場合はエラー
    */
   private _mod = () => {
     const a = this._pop() as number;
@@ -120,7 +124,7 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.8: `eq`
+   * ### No.08: `eq`
    * - スタックの先頭2つの値が等しければ1を、そうでなければ0をスタックに積む
    * - b === a
    */
@@ -131,7 +135,7 @@ export class VirtualMachine {
   };
 
   /**
-   * ### No.9: `ne`
+   * ### No.09: `ne`
    * - スタックの先頭2つの値が等しくなければ1を、そうでなければ0をスタックに積む
    * - b !== a
    */
@@ -190,19 +194,19 @@ export class VirtualMachine {
    * 配列のインデックスが命令IDに対応している
    */
   private methods = [
-    this._print,
-    this._pop,
-    this._push,
-    this._add,
-    this._sub,
-    this._mul,
-    this._div,
-    this._mod,
-    this._eq,
-    this._ne,
-    this._gt,
-    this._ge,
-    this._lt,
-    this._le,
+    /* No.00 */ this._print,
+    /* No.01 */ this._pop,
+    /* No.02 */ this._push,
+    /* No.03 */ this._add,
+    /* No.04 */ this._sub,
+    /* No.05 */ this._mul,
+    /* No.06 */ this._div,
+    /* No.07 */ this._mod,
+    /* No.08 */ this._eq,
+    /* No.09 */ this._ne,
+    /* No.10 */ this._gt,
+    /* No.11 */ this._ge,
+    /* No.12 */ this._lt,
+    /* No.13 */ this._le,
   ];
 }
