@@ -37,7 +37,7 @@ export class VirtualMachine {
     this.initialize();
     while (this.pc < instructions.length) {
       const instruction = instructions[this.pc];
-      this.methods[instruction.id](instruction.argments);
+      this.methods[instruction.methodId](instruction.argments);
       this.pc++;
     }
     return this.output;

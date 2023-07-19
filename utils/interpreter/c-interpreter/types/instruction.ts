@@ -8,6 +8,6 @@ import { Variable } from "./variable";
  * @property {Variable[]} argments - 引数
  */
 export type Instruction = {
-  id: number;
+  methodId: number;
   argments: Variable[];
 };
