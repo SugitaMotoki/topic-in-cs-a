@@ -30,10 +30,10 @@
 
 <script setup lang="ts">
 const cSourceCode = ref("");
-cSourceCode.value = sampleCodes().c.tiny;
+cSourceCode.value = useSampleCodes().c.hello;
 
 const assemblyCode = ref("");
-assemblyCode.value = sampleCodes().assembly.tiny;
+assemblyCode.value = useSampleCodes().assembly.jump.nomalJump;
 
 const cInterpreter = new (interpreter().CInterpreter)();
 
