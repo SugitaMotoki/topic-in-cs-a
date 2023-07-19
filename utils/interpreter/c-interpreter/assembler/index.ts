@@ -40,7 +40,36 @@ export class Assembler {
     /** assemblyCodeを1行ずつ格納した配列 */
     const lines = assemblyCode.split("\n");
 
-    const pc = 0;
+    // 前処理
+    const preprocessedLines = this.preprocess(lines);
+
+    for (const line of preprocessedLines) {
+      /** string配列化した行 */
+      const lineArray = line.split(" ");
+
+      // 正しい命令でなければ例外
+      if (!instructionMethodIdMap.has(lineArray[0])) {
+        throw new Error(`Invalid instruction: ${lineArray[0]}`);
+      }
+
+      instructions.push(this.createInstruction(lineArray));
+    }
+
+    console.log(this.labelIdMap);
+    console.log(instructions);
+    return instructions;
+  };
+
+  /**
+   * パースの前処理
+   * - 空行・コメント行を削除
+   * - ラベルを登録
+   * @param lines - assemblyCodeを1行ずつ格納した配列
+   * @returns {string[]} 前処理後の文字列を格納した配列
+   */
+  private preprocess = (lines: string[]): string[] => {
+    /** 前処理後の文字列を格納する配列 */
+    const preprocessedLines: string[] = [];
 
     for (const line of lines) {
       /** lineの両端の空白を削除した文字列 */
@@ -52,24 +81,15 @@ export class Assembler {
         continue;
       }
 
-      /** string配列化した行 */
-      const lineArray = trimmedLine.split(" ");
-
-      // ラベルであれば登録して次の行へ
-      if (this.isLabel(lineArray[0])) {
-        this.setLabel(lineArray[0], pc);
+      // ラベルであれば登録
+      if (this.isLabel(trimmedLine)) {
+        this.setLabel(trimmedLine, preprocessedLines.length);
         continue;
       }
 
-      // 正しい命令でなければ例外
-      if (!instructionMethodIdMap.has(lineArray[0])) {
-        throw new Error(`Invalid instruction: ${lineArray[0]}`);
-      }
-
-      instructions.push(this.createInstruction(lineArray));
+      preprocessedLines.push(trimmedLine);
     }
-
-    return instructions;
+    return preprocessedLines;
   };
 
   /**
