@@ -81,7 +81,12 @@ export class Assembler {
     const methodId = instructionMethodIdMap.get(lineArray[0])!;
     switch (methodId) {
       case 2: // push
-        return this.createPushInstruction(lineArray[1]);
+      case 16: // jump
+      case 17: // jumpIf
+        return {
+          methodId,
+          argments: this.getJumpArgment(lineArray[1]),
+        };
       default:
         return {
           methodId,
@@ -104,6 +109,19 @@ export class Assembler {
       methodId: 2,
       argments,
     };
+
+  /**
+   * jump命令オブジェクトの生成補助
+   * - ラベル名からラベルidを取得する
+   * @param argment - jump命令の引数
+   * @returns {Variable[]} labelIdを1つだけ格納した配列
+   */
+  private getJumpArgment = (argment: string): Variable[] => {
+    console.log(argment);
+    if (this.labelIdMap.has(argment)) {
+      return [this.labelIdMap.get(argment)!];
+    }
+    throw new Error(`Invalid label: ${argment}`);
   };
 
   /**
