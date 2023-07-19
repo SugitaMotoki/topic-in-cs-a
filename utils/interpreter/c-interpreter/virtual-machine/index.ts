@@ -215,6 +215,27 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.16: `jump`
+   * - プログラムカウンタを指定された値に変更する
+   */
+  private _jump = (arg: Variable[]) => {
+    const newPc = arg[0] as number;
+    this.pc = newPc - 1;
+  };
+
+  /**
+   * ### No.17: `jumpIf`
+   * - スタックの先頭の値が正（0以外）ならばプログラムカウンタを指定された値に変更する
+   */
+  private _jumpIf = (arg: Variable[]) => {
+    const newPc = arg[0] as number;
+    const value = this._pop() as number;
+    if (value !== 0) {
+      this.pc = newPc - 1;
+    }
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
@@ -235,5 +256,7 @@ export class VirtualMachine {
     /* No.13 */ this._le,
     /* No.14 */ this._increment,
     /* No.15 */ this._decrement,
+    /* No.16 */ this._jump,
+    /* No.17 */ this._jumpIf,
   ];
 }

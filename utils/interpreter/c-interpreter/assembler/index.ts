@@ -40,7 +40,36 @@ export class Assembler {
     /** assemblyCodeを1行ずつ格納した配列 */
     const lines = assemblyCode.split("\n");
 
-    const pc = 0;
+    // 前処理
+    const preprocessedLines = this.preprocess(lines);
+
+    for (const line of preprocessedLines) {
+      /** string配列化した行 */
+      const lineArray = line.split(" ");
+
+      // 正しい命令でなければ例外
+      if (!instructionMethodIdMap.has(lineArray[0])) {
+        throw new Error(`Invalid instruction: ${lineArray[0]}`);
+      }
+
+      instructions.push(this.createInstruction(lineArray));
+    }
+
+    console.log(this.labelIdMap);
+    console.log(instructions);
+    return instructions;
+  };
+
+  /**
+   * パースの前処理
+   * - 空行・コメント行を削除
+   * - ラベルを登録
+   * @param lines - assemblyCodeを1行ずつ格納した配列
+   * @returns {string[]} 前処理後の文字列を格納した配列
+   */
+  private preprocess = (lines: string[]): string[] => {
+    /** 前処理後の文字列を格納する配列 */
+    const preprocessedLines: string[] = [];
 
     for (const line of lines) {
       /** lineの両端の空白を削除した文字列 */
@@ -52,24 +81,15 @@ export class Assembler {
         continue;
       }
 
-      /** string配列化した行 */
-      const lineArray = trimmedLine.split(" ");
-
-      // ラベルであれば登録して次の行へ
-      if (this.isLabel(lineArray[0])) {
-        this.setLabel(lineArray[0], pc);
+      // ラベルであれば登録
+      if (this.isLabel(trimmedLine)) {
+        this.setLabel(trimmedLine, preprocessedLines.length);
         continue;
       }
 
-      // 正しい命令でなければ例外
-      if (!instructionMethodIdMap.has(lineArray[0])) {
-        throw new Error(`Invalid instruction: ${lineArray[0]}`);
-      }
-
-      instructions.push(this.createInstruction(lineArray));
+      preprocessedLines.push(trimmedLine);
     }
-
-    return instructions;
+    return preprocessedLines;
   };
 
   /**
@@ -81,7 +101,16 @@ export class Assembler {
     const methodId = instructionMethodIdMap.get(lineArray[0])!;
     switch (methodId) {
       case 2: // push
-        return this.createPushInstruction(lineArray[1]);
+        return {
+          methodId,
+          argments: this.getPushArgment(lineArray[1]),
+        };
+      case 16: // jump
+      case 17: // jumpIf
+        return {
+          methodId,
+          argments: this.getJumpArgment(lineArray[1]),
+        };
       default:
         return {
           methodId,
@@ -91,19 +120,30 @@ export class Assembler {
   };
 
   /**
-   * push命令オブジェクトを生成する
+   * push命令オブジェクトの生成補助
    * @param argment - push命令の引数
    * @returns {Instruction} push命令オブジェクト
    */
-  private createPushInstruction = (argment: string): Instruction => {
+  private getPushArgment = (argment: string): Variable[] => {
     const argments: Variable[] = [];
     if (this.isNumber(argment)) {
       argments.push(Number(argment));
     }
-    return {
-      methodId: 2,
-      argments,
-    };
+    return argments;
+  };
+
+  /**
+   * jump命令オブジェクトの生成補助
+   * - ラベル名からラベルidを取得する
+   * @param argment - jump命令の引数
+   * @returns {Variable[]} labelIdを1つだけ格納した配列
+   */
+  private getJumpArgment = (argment: string): Variable[] => {
+    console.log(argment);
+    if (this.labelIdMap.has(argment)) {
+      return [this.labelIdMap.get(argment)!];
+    }
+    throw new Error(`Invalid label: ${argment}`);
   };
 
   /**
