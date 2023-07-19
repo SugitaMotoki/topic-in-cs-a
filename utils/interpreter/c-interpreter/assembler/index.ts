@@ -55,8 +55,6 @@ export class Assembler {
       instructions.push(this.createInstruction(lineArray));
     }
 
-    console.log(this.labelIdMap);
-    console.log(instructions);
     return instructions;
   };
 
@@ -139,7 +137,6 @@ export class Assembler {
    * @returns {Variable[]} labelIdを1つだけ格納した配列
    */
   private getJumpArgment = (argment: string): Variable[] => {
-    console.log(argment);
     if (this.labelIdMap.has(argment)) {
       return [this.labelIdMap.get(argment)!];
     }
