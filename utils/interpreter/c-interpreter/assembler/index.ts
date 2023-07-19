@@ -1,6 +1,12 @@
 import { Instruction } from "../types";
 
 export class Assembler {
+  /** グローバル変数の名前とidを紐づけるMap */
+  private readonly globalVariableIdMap: Map<string, number> = new Map();
+
+  /** ローカル変数の名前とidを紐づけるMap */
+  private readonly localVariableIdMap: Map<string, number> = new Map();
+
   /**
    * アセンブリコードを独自の機械語に変換する
    * @param {string} assemblyCode
@@ -8,15 +14,11 @@ export class Assembler {
    * @param {Map<string, number>} localVariableIdMap - ローカル変数の名前とidを紐づけるMap
    * @returns {Instruction[]} 命令オブジェクト群（独自の機械語）
    */
-  public assemble(
-    assemblyCode: string,
-    globalVariableIdMap: Map<string, number>,
-    localVariableIdMap: Map<string, number>,
-  ): Instruction[] {
-    globalVariableIdMap.clear();
-    localVariableIdMap.clear();
+  public assemble(assemblyCode: string): Instruction[] {
+    this.globalVariableIdMap.clear();
+    this.localVariableIdMap.clear();
 
-    // HACK: 一旦空の配列を返す
+  }
     const instructions: Instruction[] = [];
     return instructions;
   }

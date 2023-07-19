@@ -14,11 +14,7 @@ export class CInterpreter {
   }
 
   public executeFromAssembly(assemblyCode: string): string {
-    const instructions: Instruction[] = this.assembler.assemble(
-      assemblyCode,
-      this.virtualMachine.globalVariableIdMap,
-      this.virtualMachine.localVariableIdMap,
-    );
+    const instructions: Instruction[] = this.assembler.assemble(assemblyCode);
     const output = this.virtualMachine.execute(instructions);
     return output.join("\n");
   }
