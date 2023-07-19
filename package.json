@@ -22,6 +22,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^5.0.0",
     "nuxt": "^3.6.2",
+    "nuxt-monaco-editor": "^1.2.2",
     "prettier": "^3.0.0",
     "vuetify": "^3.3.7"
   }
