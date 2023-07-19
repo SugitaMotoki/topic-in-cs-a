@@ -9,21 +9,21 @@
       label="Cのソースコード"
       auto-grow
       variant="solo"
-      :model-value="cSourceCode"
+      v-model="cSourceCode"
     />
     <v-textarea
       name="assembly-code"
       label="アセンブリコード"
       auto-grow
       variant="solo"
-      :model-value="assemblyCode"
+      v-model="assemblyCode"
     />
     <v-textarea
       name="result"
       label="実行結果"
       auto-grow
       variant="solo"
-      :model-value="result"
+      v-model="result"
     />
   </v-container>
 </template>

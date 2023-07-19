@@ -1,4 +1,5 @@
 import { Instruction, Variable } from "../types";
+export { instructionMethodIdMap } from "../id-map";
 
 export class VirtualMachine {
   /** スタック */
@@ -9,12 +10,6 @@ export class VirtualMachine {
 
   /** プログラムカウンタ */
   private pc = 0;
-
-  /** グローバル変数の名前とidを紐づけるMap */
-  public readonly globalVariableIdMap: Map<string, number> = new Map();
-
-  /** ローカル変数の名前とidを紐づけるMap */
-  public readonly localVariableIdMap: Map<string, number> = new Map();
 
   /** 出力 */
   private output: string[] = [];
@@ -36,7 +31,7 @@ export class VirtualMachine {
     this.initialize();
     while (this.pc < instructions.length) {
       const instruction = instructions[this.pc];
-      this.methods[instruction.id](instruction.argments);
+      this.methods[instruction.methodId](instruction.argments);
       this.pc++;
     }
     return this.output;
