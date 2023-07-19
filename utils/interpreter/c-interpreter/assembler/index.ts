@@ -81,6 +81,10 @@ export class Assembler {
     const methodId = instructionMethodIdMap.get(lineArray[0])!;
     switch (methodId) {
       case 2: // push
+        return {
+          methodId,
+          argments: this.getPushArgment(lineArray[1]),
+        };
       case 16: // jump
       case 17: // jumpIf
         return {
@@ -96,19 +100,17 @@ export class Assembler {
   };
 
   /**
-   * push命令オブジェクトを生成する
+   * push命令オブジェクトの生成補助
    * @param argment - push命令の引数
    * @returns {Instruction} push命令オブジェクト
    */
-  private createPushInstruction = (argment: string): Instruction => {
+  private getPushArgment = (argment: string): Variable[] => {
     const argments: Variable[] = [];
     if (this.isNumber(argment)) {
       argments.push(Number(argment));
     }
-    return {
-      methodId: 2,
-      argments,
-    };
+    return argments;
+  };
 
   /**
    * jump命令オブジェクトの生成補助
