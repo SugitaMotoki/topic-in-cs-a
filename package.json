@@ -7,9 +7,9 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "format": "prettier --write \"utils/**/*.ts\"",
-    "lint": "eslint --fix \"utils/**/*.ts\"",
-    "lint:ci": "eslint \"utils/**/*.ts\""
+    "format": "prettier --write \"utils/**/*.ts\" \"composables/**/*.ts\"",
+    "lint": "eslint --fix \"utils/**/*.ts\" \"composables/**/*.ts\"",
+    "lint:ci": "eslint \"utils/**/*.ts\" \"composables/**/*.ts\""
   },
   "devDependencies": {
     "@mdi/font": "^7.2.96",

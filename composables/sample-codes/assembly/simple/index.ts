@@ -5,3 +5,7 @@ MAIN:
   add
   print
 `;
+
+export const simple = {
+  tiny,
+};
