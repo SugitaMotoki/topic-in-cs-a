@@ -48,7 +48,7 @@ export class Assembler {
       const lineArray = line.split(" ");
 
       // 正しい命令でなければ例外
-      if (!instructionMethodIdMap.has(lineArray[0])) {
+      if (!instructionMethodIdMap.has(lineArray[0]!)) {
         throw new Error(`Invalid instruction: ${lineArray[0]}`);
       }
 
@@ -96,18 +96,18 @@ export class Assembler {
    * @returns {Instruction} 命令オブジェクト
    */
   private createInstruction = (lineArray: string[]): Instruction => {
-    const methodId = instructionMethodIdMap.get(lineArray[0])!;
+    const methodId = instructionMethodIdMap.get(lineArray[0]!)!;
     switch (methodId) {
       case 2: // push
         return {
           methodId,
-          argments: this.getPushArgment(lineArray[1]),
+          argments: this.getPushArgment(lineArray[1]!),
         };
       case 16: // jump
       case 17: // jumpIf
         return {
           methodId,
-          argments: this.getJumpArgment(lineArray[1]),
+          argments: this.getJumpArgment(lineArray[1]!),
         };
       default:
         return {

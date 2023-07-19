@@ -30,8 +30,8 @@ export class VirtualMachine {
   public execute(instructions: Instruction[]): string[] {
     this.initialize();
     while (this.pc < instructions.length) {
-      const instruction = instructions[this.pc];
-      this.methods[instruction.methodId](instruction.argments);
+      const instruction = instructions[this.pc]!;
+      this.methods[instruction.methodId]!(instruction.argments);
       this.pc++;
     }
     return this.output;
@@ -63,7 +63,7 @@ export class VirtualMachine {
    * - スタックに値を積む
    */
   private _push = (arg: Variable[]) => {
-    this.stack.push(arg[0]);
+    this.stack.push(arg[0]!);
   };
 
   /**
