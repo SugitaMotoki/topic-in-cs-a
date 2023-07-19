@@ -4,17 +4,21 @@ export default defineNuxtConfig({
     baseURL: "/topic-in-cs-a/",
     cdnURL: "https://sugitamotoki.github.io/topic-in-cs-a/"
   },
+
   devtools: { enabled: true },
   ssr: false,
+
   css: [
     "vuetify/styles",
     "@mdi/font/css/materialdesignicons.css",
   ],
+
   build: {
     transpile: [
       "vuetify"
     ],
   },
+
   typescript: {
     strict: true,
     tsConfig: {
@@ -38,5 +42,9 @@ export default defineNuxtConfig({
       "strictPropertyInitialization": true,
       "useUnknownInCatchVariables": true,
     }
-  }
+  },
+
+  modules: [
+    "nuxt-monaco-editor"
+  ]
 })
