@@ -1,4 +1,5 @@
 import { Instruction, Variable } from "../types";
+export { instructionMethodIdMap } from "./instruction";
 
 export class VirtualMachine {
   /** スタック */
