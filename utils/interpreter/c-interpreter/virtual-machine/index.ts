@@ -1,17 +1,11 @@
-import {
-  CArray,
-  CDataStructure,
-  CVariable,
-  Instruction,
-  Variable,
-} from "../types";
-import { FunctionObject } from "../types/function-object";
+import { Value, Argment, Instruction, FunctionObject, Address } from "../types";
+import { CDataStructure, CVariable, CArray } from "../specifications";
 export { instructionMethodIdMap } from "../id-map";
 
 /* eslint max-lines: "off" */
 export class VirtualMachine {
   /** スタック */
-  private stack: Variable[] = [];
+  private stack: Value[] = [];
 
   /** メモリ */
   private memory: CDataStructure[] = [];
@@ -92,9 +86,9 @@ export class VirtualMachine {
   /**
    * ### No.02: `push`
    * - スタックに値を積む
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _push = (arg: Variable[]) => {
+  private _push = (arg: Argment[]) => {
     this.stack.push(arg[0]!);
   };
 
@@ -250,7 +244,7 @@ export class VirtualMachine {
    * ### No.16: `jump`
    * - プログラムカウンタを指定された値に変更する
    */
-  private _jump = (arg: Variable[]) => {
+  private _jump = (arg: Argment[]) => {
     const newPc = arg[0] as number;
     this.pc = newPc - 1;
   };
@@ -259,7 +253,7 @@ export class VirtualMachine {
    * ### No.17: `jumpIf`
    * - スタックの先頭の値が正（0以外）ならばプログラムカウンタを指定された値に変更する
    */
-  private _jumpIf = (arg: Variable[]) => {
+  private _jumpIf = (arg: Argment[]) => {
     const newPc = arg[0] as number;
     const value = this._pop() as number;
     if (value !== 0) {
@@ -270,22 +264,19 @@ export class VirtualMachine {
   /**
    * ### No.18: `declareGlobal`
    * - グローバル変数を宣言する
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _declareGlobal = (arg: Variable[]) => {
+  private _declareGlobal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const cTypeId = arg[2] as number;
-    const address = this.memory.length;
+    const address: Address = this.memory.length;
     switch (dataStructureId) {
       case 0: // CVariable
-        this.memory.push({ cType: cTypeId, value: null });
+        this.memory.push(new CVariable(cTypeId));
         break;
       case 1: // CArray
-        this.memory.push({
-          cType: cTypeId,
-          value: Array(arg[3] as number).fill(null),
-        });
+        this.memory.push(new CArray(cTypeId, length));
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -293,52 +284,65 @@ export class VirtualMachine {
     this.globalVariableMap.set(variableId, address);
   };
 
+  private setCVariable = (address: Address, value: number) => {
+    const cVariable = this.memory[address]! as CVariable;
+    cVariable.setValue(value);
+  };
+
+  private setCArray = (address: Address, index: number, value: number) => {
+    const cArray = this.memory[address]! as CArray;
+    const cVariable = cArray.values[index]! as CVariable;
+    cVariable.setValue(value);
+  };
+
   /**
    * ### No.19: `setGlobal`
    * - グローバル変数に値を代入する
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _setGlobal = (arg: Variable[]) => {
+  private _setGlobal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const value = this._pop() as number;
     const address = this.globalVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CDataStructure;
     switch (dataStructureId) {
       case 0: // CVariable
-        this.memory[address] = { cType: (data as CVariable).cType, value };
+        this.setCVariable(address, value);
         break;
       case 1: // CArray
-        (data as CArray).value[arg[2] as number] = value;
-        this.memory[address] = {
-          cType: (data as CArray).cType,
-          value: (data as CArray).value,
-        };
+        this.setCArray(address, arg[2] as number, value);
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
     }
   };
 
+  private getCVariable = (address: Address) => {
+    const cVariable = this.memory[address]! as CVariable;
+    this.stack.push(cVariable.value!);
+  };
+
+  private getCArray = (address: Address, index: number) => {
+    const cArray = this.memory[address]! as CArray;
+    const cVariable = cArray.values[index]! as CVariable;
+    this.stack.push(cVariable.value!);
+  };
+
   /**
    * ### No.20: `getGlobal`
    * - グローバル変数の値をスタックに積む
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _getGlobal = (arg: Variable[]) => {
+  private _getGlobal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const address = this.globalVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CDataStructure;
-    if (data.value === null) {
-      throw new Error("not initialized");
-    }
     switch (dataStructureId) {
       case 0: // CVariable
-        this.stack.push(data.value as number);
+        this.getCVariable(address);
         break;
       case 1: // CArray
-        this.stack.push((data as CArray).value[arg[2] as number]!);
+        this.getCArray(address, arg[2] as number);
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -348,9 +352,9 @@ export class VirtualMachine {
   /**
    * ### No.21: `declareLocal`
    * - ローカル変数を宣言する
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _declareLocal = (arg: Variable[]) => {
+  private _declareLocal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const cTypeId = arg[2] as number;
@@ -358,13 +362,10 @@ export class VirtualMachine {
     const currentFunction = this.functionStack[this.functionStack.length - 1]!;
     switch (dataStructureId) {
       case 0: // CVariable
-        this.memory.push({ cType: cTypeId, value: null });
+        this.memory.push(new CVariable(cTypeId));
         break;
       case 1: // CArray
-        this.memory.push({
-          cType: cTypeId,
-          value: Array(arg[3] as number).fill(null),
-        });
+        this.memory.push(new CArray(cTypeId, length));
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -375,25 +376,20 @@ export class VirtualMachine {
   /**
    * ### No.22: `setLocal`
    * - ローカル変数に値を代入する
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _setLocal = (arg: Variable[]) => {
+  private _setLocal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const value = this._pop() as number;
     const currentFunction = this.functionStack[this.functionStack.length - 1]!;
     const address = currentFunction.localVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CDataStructure;
     switch (dataStructureId) {
       case 0: // CVariable
-        this.memory[address] = { cType: (data as CVariable).cType, value };
+        this.setCVariable(address, value);
         break;
       case 1: // CArray
-        (data as CArray).value[arg[2] as number] = value;
-        this.memory[address] = {
-          cType: (data as CArray).cType,
-          value: (data as CArray).value,
-        };
+        this.setCArray(address, arg[2] as number, value);
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -403,23 +399,19 @@ export class VirtualMachine {
   /**
    * ### No.23: `getLocal`
    * - ローカル変数の値をスタックに積む
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _getLocal = (arg: Variable[]) => {
+  private _getLocal = (arg: Argment[]) => {
     const dataStructureId = arg[0] as number;
     const variableId = arg[1] as number;
     const currentFunction = this.functionStack[this.functionStack.length - 1]!;
     const address = currentFunction.localVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CDataStructure;
-    if (data.value === null) {
-      throw new Error("not initialized");
-    }
     switch (dataStructureId) {
       case 0: // CVariable
-        this.stack.push(data.value as number);
+        this.getCVariable(address);
         break;
       case 1: // CArray
-        this.stack.push((data as CArray).value[arg[2] as number]!);
+        this.getCArray(address, arg[2] as number);
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -429,9 +421,9 @@ export class VirtualMachine {
   /**
    * ### No.24: `call`
    * - 関数を呼び出す
-   * @param {Variable[]} arg - 引数
+   * @param {Argment[]} arg - 引数
    */
-  private _call = (arg: Variable[]) => {
+  private _call = (arg: Argment[]) => {
     const functionId = arg[0] as number;
     this.functionStack.push({
       functionId,
