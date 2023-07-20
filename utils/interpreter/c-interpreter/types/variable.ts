@@ -15,7 +15,7 @@ export type CArray = {
 
 export type CPointer = {
   cType: number;
-  address: string;
+  value: string;
 };
 
 export type CStruct = {

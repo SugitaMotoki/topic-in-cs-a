@@ -1,7 +1,7 @@
 export const math = `\
 MAIN:
-  declareGlobal int x
-  declareGlobal int y
+  declareGlobal x int
+  declareGlobal y int
   push 2
   push 3
   add
