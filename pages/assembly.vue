@@ -1,5 +1,6 @@
 <template>
   <v-container>
+    <v-btn size="large" @click="execute" block class="mb-4">実行</v-btn>
     <v-row>
       <v-col cols="12" md="6">
         <v-textarea
@@ -23,7 +24,6 @@
         />
       </v-col>
     </v-row>
-    <v-btn @click="execute" block>実行</v-btn>
   </v-container>
 </template>
 
@@ -32,7 +32,8 @@ import { useSampleCodes } from "../composables";
 import { interpreter } from "../utils";
 
 const assemblyCode = ref("");
-assemblyCode.value = useSampleCodes().assembly.variable.local.math;
+assemblyCode.value = useSampleCodes().benchmark.fibonacci.assembly;
+assemblyCode.value = useSampleCodes().assembly.variable.local.array;
 
 const cInterpreter = new (interpreter().CInterpreter)();
 
@@ -44,5 +45,4 @@ const execute = () => {
     result.value = error as string;
   }
 }
-execute();
 </script>

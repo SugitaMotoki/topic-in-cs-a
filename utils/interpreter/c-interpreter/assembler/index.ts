@@ -1,5 +1,6 @@
+import { regexp } from "../specifications";
 import { cTypeIdMap } from "../id-map";
-import { Instruction, Variable } from "../types";
+import { Instruction, Argment } from "../types";
 import { instructionMethodIdMap } from "../virtual-machine";
 
 /* eslint max-lines: "off" */
@@ -12,12 +13,6 @@ export class Assembler {
 
   /** ラベルの名前とidを紐づけるMap */
   private readonly labelIdMap: Map<string, number> = new Map();
-
-  /** 変数の正規表現 */
-  public readonly variableRegExp = /^[A-Za-z_]+\w*$/u;
-
-  /** 配列の正規表現 */
-  public readonly arrayRegExp = /^(?<name>[A-Za-z_]+\w*)\[(?<length>\d+)\]$/u;
 
   /** main関数の開始位置となるプログラムカウンタを返す */
   public getPcOfMainFunction = (): number => {
@@ -110,51 +105,34 @@ export class Assembler {
    */
   private createInstruction = (lineArray: string[]): Instruction => {
     const methodId = instructionMethodIdMap.get(lineArray[0]!)!;
+    let argments: Argment[] = [];
     switch (methodId) {
       case 2: // push
-        return {
-          methodId,
-          argments: this.getPushArgment(lineArray[1]!),
-        };
+        argments = this.getPushArgment(lineArray[1]!);
+        break;
       case 16: // jump
       case 17: // jumpIf
-        return {
-          methodId,
-          argments: this.getJumpArgment(lineArray[1]!),
-        };
+      case 24: // call
+        argments = [this.getPcOfLabel(lineArray[1]!)];
+        break;
       case 18: // declareGlobal
-        return {
-          methodId,
-          argments: this.getDeclareGlobalArgment(lineArray[1]!, lineArray[2]!),
-        };
+        argments = this.getDeclareArgment(lineArray[1]!, lineArray[2]!, 0);
+        break;
       case 19: // setGlobal
       case 20: // getGlobal
-        return {
-          methodId,
-          argments: this.getUseGlobalArgment(lineArray[1]!),
-        };
+        argments = this.setOrGetArgment(lineArray[1]!, 0);
+        break;
       case 21: // declareLocal
-        return {
-          methodId,
-          argments: this.getDeclareLocalArgment(lineArray[1]!, lineArray[2]!),
-        };
+        argments = this.getDeclareArgment(lineArray[1]!, lineArray[2]!, 1);
+        break;
       case 22: // setLocal
       case 23: // getLocal
-        return {
-          methodId,
-          argments: this.getUseLocalArgment(lineArray[1]!),
-        };
-      case 24: // call
-        return {
-          methodId,
-          argments: this.getJumpArgment(lineArray[1]!),
-        };
+        argments = this.setOrGetArgment(lineArray[1]!, 1);
+        break;
       default:
-        return {
-          methodId,
-          argments: [],
-        };
+        break;
     }
+    return { methodId, argments };
   };
 
   /**
@@ -162,167 +140,177 @@ export class Assembler {
    * @param argment - push命令の引数
    * @returns {Instruction} push命令オブジェクト
    */
-  private getPushArgment = (argment: string): Variable[] => {
-    const argments: Variable[] = [];
+  private getPushArgment = (argment: string): Argment[] => {
     if (this.isNumber(argment)) {
-      argments.push(Number(argment));
+      return [Number(argment)];
+    } else if (this.isString(argment)) {
+      return [argment.slice(1, -1)];
     }
-    return argments;
+    throw new Error(`Invalid argment: ${argment}`);
   };
 
   /**
-   * jump命令オブジェクトの生成補助
-   * - ラベル名からラベルidを取得する
-   * @param argment - jump命令の引数
-   * @returns {Variable[]} labelIdを1つだけ格納した配列
+   * ラベル名から対応するプログラムカウンタを取得する
+   * @param {string} label - ラベル名
+   * @returns {number} プログラムカウンタ
    */
-  private getJumpArgment = (argment: string): Variable[] => {
-    if (this.labelIdMap.has(argment)) {
-      return [this.labelIdMap.get(argment)!];
+  private getPcOfLabel = (label: string): number => {
+    if (this.labelIdMap.has(label)) {
+      return this.labelIdMap.get(label)!;
     }
-    throw new Error(`Invalid label: ${argment}`);
+    throw new Error(`Invalid label: ${label}`);
   };
 
   /**
-   * declareGlobal命令オブジェクトの生成補助
-   * - グローバル変数を宣言する
-   * @param {string} cType
-   * @param {string} variable
-   * @returns {Variable[]}
+   * 変数の宣言
+   * @param {string} variableName - 変数名
+   * @param {string} cTypeName - 変数の型
+   * @param {0 | 1} mapId - グローバルかローカルか
+   * @returns {Argment[]} 引数
    */
-  private getDeclareGlobalArgment = (
-    arg1: string, // 変数名
-    arg2: string,
-  ): Variable[] => {
-    const variableMatchArray = arg1.match(this.variableRegExp);
-    // 変数の場合
-    if (variableMatchArray) {
-      if (this.globalVariableIdMap.has(variableMatchArray[0])) {
-        throw new Error(`Duplicate variable name: ${variableMatchArray[0]}`);
-      } else if (!cTypeIdMap.has(arg2)) {
-        throw new Error(`Invalid type: ${arg2}`);
+  private declareCVariable = (
+    variableName: string,
+    cTypeName: string,
+    mapId: 0 | 1,
+  ): Argment[] => {
+    if (!cTypeIdMap.has(cTypeName)) {
+      throw new Error(`Invalid type: ${cTypeName}`);
+    }
+    const cTypeId = cTypeIdMap.get(cTypeName)!;
+    const variableMap = this.variableMaps[mapId]!;
+    // グローバルかローカルかで名前重複時の挙動が異なる
+    if (variableMap.has(variableName)) {
+      if (mapId === 0) {
+        throw new Error(`Duplicate variable name: ${variableName}`);
+      } else {
+        return [0, variableMap.get(variableName)!, cTypeId];
       }
-      const variableId = this.globalVariableIdMap.size;
-      this.globalVariableIdMap.set(variableMatchArray[0], variableId);
-      return [0, variableId, cTypeIdMap.get(arg2)!];
+    }
+    const variableId = variableMap.size;
+    variableMap.set(variableName, variableId);
+    return [0, variableId, cTypeId];
+  };
+
+  /**
+   * 配列の宣言
+   * @param {string} arrayName - 配列名
+   * @param {string} cTypeName - 配列の型
+   * @param {number} length - 配列の長さ
+   * @param {0 | 1} mapId - グローバルかローカルか
+   * @returns {Argment[]} 引数
+   */
+  private declareCArray = (
+    arrayName: string,
+    cTypeName: string,
+    length: number,
+    mapId: 0 | 1,
+  ): Argment[] => {
+    if (!cTypeIdMap.has(cTypeName)) {
+      throw new Error(`Invalid type: ${cTypeName}`);
+    }
+    const cTypeId = cTypeIdMap.get(cTypeName)!;
+    const variableMap = this.variableMaps[mapId]!;
+    // グローバルかローカルかで名前重複時の挙動が異なる
+    if (variableMap.has(arrayName)) {
+      if (mapId === 0) {
+        throw new Error(`Duplicate variable name: ${arrayName}`);
+      } else {
+        return [1, variableMap.get(arrayName)!, cTypeId, length];
+      }
+    }
+    const variableId = variableMap.size;
+    variableMap.set(arrayName, variableId);
+    return [1, variableId, cTypeId, length];
+  };
+
+  /**
+   * declare命令オブジェクトの生成補助
+   * @param {string} arg1 - 変数名 or 配列名
+   * @param {string} arg2 - 変数の型
+   * @param {0 | 1} arg3 - グローバルかローカルか
+   * @returns
+   */
+  private getDeclareArgment = (
+    arg1: string,
+    arg2: string,
+    arg3: 0 | 1,
+  ): Argment[] => {
+    // 変数の場合
+    const variableMatchArray = arg1.match(regexp.cVariable);
+    if (variableMatchArray) {
+      return this.declareCVariable(variableMatchArray[0], arg2, arg3);
     }
     // 配列の場合
-    const arrayMatchArray = arg1.match(this.arrayRegExp);
+    const arrayMatchArray = arg1.match(regexp.cArray);
     if (arrayMatchArray) {
-      if (this.globalVariableIdMap.has(arrayMatchArray[1]!)) {
-        throw new Error(`Duplicate variable name: ${arrayMatchArray[1]}`);
-      } else if (!cTypeIdMap.has(arg2)) {
-        throw new Error(`Invalid type: ${arg2}`);
-      }
-      const variableId = this.globalVariableIdMap.size;
-      this.globalVariableIdMap.set(arrayMatchArray[1]!, variableId);
-      return [1, variableId, cTypeIdMap.get(arg2)!, Number(arrayMatchArray[2])];
+      return this.declareCArray(
+        arrayMatchArray[1]!,
+        arg2,
+        Number(arrayMatchArray[2]),
+        arg3,
+      );
     }
     throw new Error(`Invalid variable name: ${arg2}`);
   };
 
   /**
-   * setGlobal・getGlobal命令オブジェクトの生成補助
-   * @param {string} variable
-   * @returns {Variable[]}
+   * 変数名から変数IDを取得する
+   * @param {string} variableName - 変数名
+   * @param {0 | 1} mapId - グローバルかローカルか
+   * @returns {Argment[]} 引数
    */
-  private getUseGlobalArgment = (variable: string): Variable[] => {
-    // 変数の場合
-    const variableMatchArray = variable.match(this.variableRegExp);
-    if (variableMatchArray) {
-      if (this.globalVariableIdMap.has(variableMatchArray[0])) {
-        return [0, this.globalVariableIdMap.get(variableMatchArray[0])!];
-      }
-      throw new Error(`Undefined variable: ${variableMatchArray[0]}`);
+  private setOrGetCVariable = (
+    variableName: string,
+    mapId: 0 | 1,
+  ): Argment[] => {
+    const variableMap = this.variableMaps[mapId]!;
+    if (variableMap.has(variableName)) {
+      return [0, variableMap.get(variableName)!];
     }
-    // 配列の場合
-    const arrayMatchArray = variable.match(this.arrayRegExp);
-    if (arrayMatchArray) {
-      if (this.globalVariableIdMap.has(arrayMatchArray[1]!)) {
-        return [
-          1,
-          this.globalVariableIdMap.get(arrayMatchArray[1]!)!,
-          Number(arrayMatchArray[2]),
-        ];
-      }
-      throw new Error(`Undefined variable: ${arrayMatchArray[1]}`);
-    }
-    throw new Error(`Invalid variable name: ${variable}`);
+    throw new Error(`Undefined variable: ${variableName}`);
   };
 
   /**
-   * declareLocal命令オブジェクトの生成補助
-   * - グローバル変数を宣言する
-   * @param {string} arg1
-   * @param {string} arg2
-   * @returns {Variable[]}
+   * 配列名から変数IDを取得する
+   * @param {string} arrayName - 配列名
+   * @param {number} index - 配列のインデックス
+   * @param {0 | 1} mapId - グローバルかローカルか
+   * @returns {Argment[]} 引数
    */
-  private getDeclareLocalArgment = (
-    arg1: string, // 変数名
-    arg2: string,
-  ): Variable[] => {
-    const variableMatchArray = arg1.match(this.variableRegExp);
-    // 変数の場合
-    if (variableMatchArray) {
-      const variableId = this.localVariableIdMap.size;
-      if (this.localVariableIdMap.has(variableMatchArray[0])) {
-        return [
-          0,
-          this.localVariableIdMap.get(variableMatchArray[0])!,
-          variableId,
-        ];
-      } else if (!cTypeIdMap.has(arg2)) {
-        throw new Error(`Invalid type: ${arg2}`);
-      }
-      this.localVariableIdMap.set(variableMatchArray[0], variableId);
-      return [0, variableId, cTypeIdMap.get(arg2)!];
+  private setOrGetCArray = (
+    arrayName: string,
+    index: number,
+    mapId: 0 | 1,
+  ): Argment[] => {
+    const variableMap = this.variableMaps[mapId]!;
+    if (variableMap.has(arrayName)) {
+      return [1, variableMap.get(arrayName)!, index];
     }
-    // 配列の場合
-    const arrayMatchArray = arg1.match(this.arrayRegExp);
-    if (arrayMatchArray) {
-      const variableId = this.localVariableIdMap.size;
-      if (this.localVariableIdMap.has(arrayMatchArray[1]!)) {
-        return [
-          1,
-          this.localVariableIdMap.get(arrayMatchArray[1]!)!,
-          variableId,
-        ];
-      } else if (!cTypeIdMap.has(arg2)) {
-        throw new Error(`Invalid type: ${arg2}`);
-      }
-      this.localVariableIdMap.set(arrayMatchArray[1]!, variableId);
-      return [1, variableId, cTypeIdMap.get(arg2)!, Number(arrayMatchArray[2])];
-    }
-    throw new Error(`Invalid variable name: ${arg2}`);
+    throw new Error(`Undefined variable: ${arrayName}`);
   };
 
   /**
-   * setLocal・getLocal命令オブジェクトの生成補助
-   * @param {string} variable
-   * @returns {Variable[]}
+   * setXXX・getXXX命令オブジェクトの生成補助
+   * @param {string} arg1 - 変数名 or 配列名
+   * @param {0 | 1} arg2 - グローバルかローカルか
+   * @returns {Argment[]} 引数
    */
-  private getUseLocalArgment = (variable: string): Variable[] => {
+  private setOrGetArgment = (arg1: string, arg2: 0 | 1): Argment[] => {
     // 変数の場合
-    const variableMatchArray = variable.match(this.variableRegExp);
+    const variableMatchArray = arg1.match(regexp.cVariable);
     if (variableMatchArray) {
-      if (this.localVariableIdMap.has(variableMatchArray[0])) {
-        return [0, this.localVariableIdMap.get(variableMatchArray[0])!];
-      }
-      throw new Error(`Undefined variable: ${variableMatchArray[0]}`);
+      return this.setOrGetCVariable(variableMatchArray[0], arg2);
     }
     // 配列の場合
-    const arrayMatchArray = variable.match(this.arrayRegExp);
+    const arrayMatchArray = arg1.match(regexp.cArray);
     if (arrayMatchArray) {
-      if (this.localVariableIdMap.has(arrayMatchArray[1]!)) {
-        return [
-          1,
-          this.localVariableIdMap.get(arrayMatchArray[1]!)!,
-          Number(arrayMatchArray[2]),
-        ];
-      }
-      throw new Error(`Undefined variable: ${arrayMatchArray[1]}`);
+      return this.setOrGetCArray(
+        arrayMatchArray[1]!,
+        Number(arrayMatchArray[2]),
+        arg2,
+      );
     }
-    throw new Error(`Invalid variable name: ${variable}`);
+    throw new Error(`Invalid variable name: ${arg1}`);
   };
 
   /**
@@ -345,11 +333,20 @@ export class Assembler {
 
   /**
    * 与えられた文字列をNumber型に変換できるかどうか判断する
-   * @param str
-   * @returns
+   * @param {string} str - 与えられた文字列
+   * @returns {boolean} Number型に変換できるかどうか
    */
   private isNumber = (str: string): boolean => {
     return !Number.isNaN(Number(str));
+  };
+
+  /**
+   * 与えられた文字列が文字列かどうか判断する
+   * @param {string} str - 与えられた文字列
+   * @returns {boolean} 文字列かどうか
+   */
+  private isString = (str: string): boolean => {
+    return str.startsWith('"') && str.endsWith('"');
   };
 
   /**
@@ -366,4 +363,9 @@ export class Assembler {
     }
     this.labelIdMap.set(labelName, pc);
   };
+
+  private readonly variableMaps = [
+    /* No.00 */ this.globalVariableIdMap,
+    /* No.01 */ this.localVariableIdMap,
+  ];
 }

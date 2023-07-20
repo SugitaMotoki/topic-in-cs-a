@@ -42,6 +42,8 @@ module.exports = {
     "max-statements": "off",
     "complexity": "off",
     "no-negated-condition": "off", 
+    "max-classes-per-file": "off",
+    "max-params": ["error", 4],
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
     "lines-between-class-members": ["error", "always", { exceptAfterSingleLine: true }],
     "new-cap": ["error", {
