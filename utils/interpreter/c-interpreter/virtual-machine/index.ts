@@ -5,6 +5,7 @@ import {
   Instruction,
   Variable,
 } from "../types";
+import { FunctionObject } from "../types/function-object";
 export { instructionMethodIdMap } from "../id-map";
 
 /* eslint max-lines: "off" */
@@ -21,6 +22,9 @@ export class VirtualMachine {
   /** グローバル変数 */
   private globalVariableMap = new Map<number, number>();
 
+  /** 関数 */
+  private functionStack: FunctionObject[] = [];
+
   /** 出力 */
   private output: string[] = [];
 
@@ -30,6 +34,7 @@ export class VirtualMachine {
     this.memory = [];
     this.pc = 0;
     this.output = [];
+    this.functionStack = [];
   }
 
   /**
@@ -37,14 +42,29 @@ export class VirtualMachine {
    * @param {Instruction[]} instructions アセンブリ命令列
    * @returns {string[]} 出力
    */
-  public execute(instructions: Instruction[]): string[] {
+  public execute(
+    instructions: Instruction[],
+    pcOfMainFunction: number,
+  ): string[] {
+    // 領域の初期化
     this.initialize();
+
+    // MAIN関数をセット
+    this.functionStack.push({
+      functionId: pcOfMainFunction,
+      returnAddress: instructions.length,
+      localVariableMap: new Map<number, number>(),
+    });
+
+    // プログラムカウンタをMAIN関数の先頭にセット
+    this.pc = pcOfMainFunction;
+
+    // 命令の実行
     while (this.pc < instructions.length) {
       const instruction = instructions[this.pc]!;
       this.methods[instruction.methodId]!(instruction.argments);
       this.pc++;
     }
-    console.log(this.memory);
     return this.output;
   }
 
@@ -326,6 +346,114 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.21: `declareLocal`
+   * - ローカル変数を宣言する
+   * @param {Variable[]} arg - 引数
+   */
+  private _declareLocal = (arg: Variable[]) => {
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
+    const cTypeId = arg[2] as number;
+    const address = this.memory.length;
+    const currentFunction = this.functionStack[this.functionStack.length - 1]!;
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.memory.push({ cType: cTypeId, value: null });
+        break;
+      case 1: // CArray
+        this.memory.push({
+          cType: cTypeId,
+          value: Array(arg[3] as number).fill(null),
+        });
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
+    currentFunction.localVariableMap.set(variableId, address);
+  };
+
+  /**
+   * ### No.22: `setLocal`
+   * - ローカル変数に値を代入する
+   * @param {Variable[]} arg - 引数
+   */
+  private _setLocal = (arg: Variable[]) => {
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
+    const value = this._pop() as number;
+    const currentFunction = this.functionStack[this.functionStack.length - 1]!;
+    const address = currentFunction.localVariableMap.get(variableId)!;
+    const data = this.memory[address]! as CDataStructure;
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.memory[address] = { cType: (data as CVariable).cType, value };
+        break;
+      case 1: // CArray
+        (data as CArray).value[arg[2] as number] = value;
+        this.memory[address] = {
+          cType: (data as CArray).cType,
+          value: (data as CArray).value,
+        };
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
+  };
+
+  /**
+   * ### No.23: `getLocal`
+   * - ローカル変数の値をスタックに積む
+   * @param {Variable[]} arg - 引数
+   */
+  private _getLocal = (arg: Variable[]) => {
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
+    const currentFunction = this.functionStack[this.functionStack.length - 1]!;
+    const address = currentFunction.localVariableMap.get(variableId)!;
+    const data = this.memory[address]! as CDataStructure;
+    if (data.value === null) {
+      throw new Error("not initialized");
+    }
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.stack.push(data.value as number);
+        break;
+      case 1: // CArray
+        this.stack.push((data as CArray).value[arg[2] as number]!);
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
+  };
+
+  /**
+   * ### No.24: `call`
+   * - 関数を呼び出す
+   * @param {Variable[]} arg - 引数
+   */
+  private _call = (arg: Variable[]) => {
+    const functionId = arg[0] as number;
+    this.functionStack.push({
+      functionId,
+      returnAddress: this.pc + 1,
+      localVariableMap: new Map<number, number>(),
+    });
+    this._jump([functionId]);
+  };
+
+  /**
+   * ### No.25: `return`
+   * - 関数から戻る
+   */
+  private _return = () => {
+    const currentFunction = this.functionStack.pop()!;
+    if (!currentFunction) {
+      throw new Error("function stack underflow");
+    }
+    this._jump([currentFunction.returnAddress]);
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
@@ -351,5 +479,10 @@ export class VirtualMachine {
     /* No.18 */ this._declareGlobal,
     /* No.19 */ this._setGlobal,
     /* No.20 */ this._getGlobal,
+    /* No.21 */ this._declareLocal,
+    /* No.22 */ this._setLocal,
+    /* No.23 */ this._getLocal,
+    /* No.24 */ this._call,
+    /* No.25 */ this._return,
   ];
 }

@@ -21,4 +21,9 @@ export const instructionMethodIdMap = new Map<string, number>([
   ["declareGlobal", 18],
   ["setGlobal", 19],
   ["getGlobal", 20],
+  ["declareLocal", 21],
+  ["setLocal", 22],
+  ["getLocal", 23],
+  ["call", 24],
+  ["return", 25],
 ]);
