@@ -2,6 +2,7 @@ import { cTypeIdMap } from "../id-map";
 import { Instruction, Variable } from "../types";
 import { instructionMethodIdMap } from "../virtual-machine";
 
+/* eslint max-lines: "off" */
 export class Assembler {
   /** グローバル変数の名前とidを紐づけるMap */
   private readonly globalVariableIdMap: Map<string, number> = new Map();
@@ -132,6 +133,17 @@ export class Assembler {
           methodId,
           argments: this.getUseGlobalArgment(lineArray[1]!),
         };
+      case 21: // declareLocal
+        return {
+          methodId,
+          argments: this.getDeclareLocalArgment(lineArray[1]!, lineArray[2]!),
+        };
+      case 22: // setLocal
+      case 23: // getLocal
+        return {
+          methodId,
+          argments: this.getUseLocalArgment(lineArray[1]!),
+        };
       case 24: // call
         return {
           methodId,
@@ -230,6 +242,81 @@ export class Assembler {
         return [
           1,
           this.globalVariableIdMap.get(arrayMatchArray[1]!)!,
+          Number(arrayMatchArray[2]),
+        ];
+      }
+      throw new Error(`Undefined variable: ${arrayMatchArray[1]}`);
+    }
+    throw new Error(`Invalid variable name: ${variable}`);
+  };
+
+  /**
+   * declareLocal命令オブジェクトの生成補助
+   * - グローバル変数を宣言する
+   * @param {string} arg1
+   * @param {string} arg2
+   * @returns {Variable[]}
+   */
+  private getDeclareLocalArgment = (
+    arg1: string, // 変数名
+    arg2: string,
+  ): Variable[] => {
+    const variableMatchArray = arg1.match(this.variableRegExp);
+    // 変数の場合
+    if (variableMatchArray) {
+      const variableId = this.localVariableIdMap.size;
+      if (this.localVariableIdMap.has(variableMatchArray[0])) {
+        return [
+          0,
+          this.localVariableIdMap.get(variableMatchArray[0])!,
+          variableId,
+        ];
+      } else if (!cTypeIdMap.has(arg2)) {
+        throw new Error(`Invalid type: ${arg2}`);
+      }
+      this.localVariableIdMap.set(variableMatchArray[0], variableId);
+      return [0, variableId, cTypeIdMap.get(arg2)!];
+    }
+    // 配列の場合
+    const arrayMatchArray = arg1.match(this.arrayRegExp);
+    if (arrayMatchArray) {
+      const variableId = this.localVariableIdMap.size;
+      if (this.localVariableIdMap.has(arrayMatchArray[1]!)) {
+        return [
+          1,
+          this.localVariableIdMap.get(arrayMatchArray[1]!)!,
+          variableId,
+        ];
+      } else if (!cTypeIdMap.has(arg2)) {
+        throw new Error(`Invalid type: ${arg2}`);
+      }
+      this.localVariableIdMap.set(arrayMatchArray[1]!, variableId);
+      return [1, variableId, cTypeIdMap.get(arg2)!, Number(arrayMatchArray[2])];
+    }
+    throw new Error(`Invalid variable name: ${arg2}`);
+  };
+
+  /**
+   * setLocal・getLocal命令オブジェクトの生成補助
+   * @param {string} variable
+   * @returns {Variable[]}
+   */
+  private getUseLocalArgment = (variable: string): Variable[] => {
+    // 変数の場合
+    const variableMatchArray = variable.match(this.variableRegExp);
+    if (variableMatchArray) {
+      if (this.localVariableIdMap.has(variableMatchArray[0])) {
+        return [0, this.localVariableIdMap.get(variableMatchArray[0])!];
+      }
+      throw new Error(`Undefined variable: ${variableMatchArray[0]}`);
+    }
+    // 配列の場合
+    const arrayMatchArray = variable.match(this.arrayRegExp);
+    if (arrayMatchArray) {
+      if (this.localVariableIdMap.has(arrayMatchArray[1]!)) {
+        return [
+          1,
+          this.localVariableIdMap.get(arrayMatchArray[1]!)!,
           Number(arrayMatchArray[2]),
         ];
       }
