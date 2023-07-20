@@ -1,3 +1,4 @@
+import { cTypeIdMap } from "../id-map";
 import { Instruction, Variable } from "../types";
 import { instructionMethodIdMap } from "../virtual-machine";
 
@@ -10,6 +11,9 @@ export class Assembler {
 
   /** ラベルの名前とidを紐づけるMap */
   private readonly labelIdMap: Map<string, number> = new Map();
+
+  /** 変数の正規表現 */
+  public readonly variableRegExp = /^[A-Za-z_]+\w*$/u;
 
   /**
    * アセンブリコードを独自の機械語に変換する
@@ -109,6 +113,17 @@ export class Assembler {
           methodId,
           argments: this.getJumpArgment(lineArray[1]!),
         };
+      case 18: // declareGlobal
+        return {
+          methodId,
+          argments: this.getDeclareGlobalArgment(lineArray[1]!, lineArray[2]!),
+        };
+      case 19: // setGlobal
+      case 20: // getGlobal
+        return {
+          methodId,
+          argments: this.getUseGlobalArgment(lineArray[1]!),
+        };
       default:
         return {
           methodId,
@@ -141,6 +156,48 @@ export class Assembler {
       return [this.labelIdMap.get(argment)!];
     }
     throw new Error(`Invalid label: ${argment}`);
+  };
+
+  /**
+   * declareGlobal命令オブジェクトの生成補助
+   * - グローバル変数を宣言する
+   * @param {string} cType
+   * @param {string} variable
+   * @returns {Variable[]}
+   */
+  private getDeclareGlobalArgment = (
+    cType: string,
+    variable: string,
+  ): Variable[] => {
+    if (!cTypeIdMap.has(cType)) {
+      throw new Error(`Invalid type: ${cType}`);
+    }
+    const variableName = variable.match(this.variableRegExp);
+    if (variableName) {
+      if (this.globalVariableIdMap.has(variableName[0])) {
+        throw new Error(`Duplicate variable name: ${variableName[0]}`);
+      }
+      const index = this.globalVariableIdMap.size;
+      this.globalVariableIdMap.set(variableName[0], index);
+      return [index, cTypeIdMap.get(cType)!];
+    }
+    throw new Error(`Invalid variable name: ${variable}`);
+  };
+
+  /**
+   * setGlobal・getGlobal命令オブジェクトの生成補助
+   * @param {string} variable
+   * @returns {Variable[]}
+   */
+  private getUseGlobalArgment = (variable: string): Variable[] => {
+    const variableName = variable.match(this.variableRegExp);
+    if (variableName) {
+      if (this.globalVariableIdMap.has(variableName[0])) {
+        return [this.globalVariableIdMap.get(variableName[0])!];
+      }
+      throw new Error(`Undefined variable: ${variableName[0]}`);
+    }
+    throw new Error(`Invalid variable name: ${variable}`);
   };
 
   /**

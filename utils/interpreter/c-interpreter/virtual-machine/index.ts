@@ -1,15 +1,19 @@
-import { Instruction, Variable } from "../types";
+import { CDataStructure, CVariable, Instruction, Variable } from "../types";
 export { instructionMethodIdMap } from "../id-map";
 
+/* eslint max-lines: "off" */
 export class VirtualMachine {
   /** スタック */
   private stack: Variable[] = [];
 
   /** メモリ */
-  private memory: Variable[] = [];
+  private memory: CDataStructure[] = [];
 
   /** プログラムカウンタ */
   private pc = 0;
+
+  /** グローバル変数 */
+  private globalVariableMap = new Map<number, number>();
 
   /** 出力 */
   private output: string[] = [];
@@ -61,6 +65,7 @@ export class VirtualMachine {
   /**
    * ### No.02: `push`
    * - スタックに値を積む
+   * @param {Variable[]} arg - 引数
    */
   private _push = (arg: Variable[]) => {
     this.stack.push(arg[0]!);
@@ -236,6 +241,47 @@ export class VirtualMachine {
   };
 
   /**
+   * ### No.18: `declareGlobal`
+   * - グローバル変数を宣言する
+   * @param {Variable[]} arg - 引数
+   */
+  private _declareGlobal = (arg: Variable[]) => {
+    const variableId = arg[0] as number;
+    const cTypeId = arg[1] as number;
+    const address = this.memory.length;
+    this.memory.push({ cType: cTypeId, value: null });
+    this.globalVariableMap.set(variableId, address);
+  };
+
+  /**
+   * ### No.19: `setGlobal`
+   * - グローバル変数に値を代入する
+   * @param {Variable[]} arg - 引数
+   */
+  private _setGlobal = (arg: Variable[]) => {
+    const variableId = arg[0] as number;
+    const value = this._pop() as number;
+    const address = this.globalVariableMap.get(variableId)!;
+    const data = this.memory[address]! as CVariable;
+    this.memory[address] = { cType: data.cType, value };
+  };
+
+  /**
+   * ### No.20: `getGlobal`
+   * - グローバル変数の値をスタックに積む
+   * @param {Variable[]} arg - 引数
+   */
+  private _getGlobal = (arg: Variable[]) => {
+    const variableId = arg[0] as number;
+    const address = this.globalVariableMap.get(variableId)!;
+    const data = this.memory[address]! as CVariable;
+    if (data.value === null) {
+      throw new Error("not initialized");
+    }
+    this.stack.push(data.value);
+  };
+
+  /**
    * 命令の実行メソッド
    * 配列のインデックスが命令IDに対応している
    */
@@ -258,5 +304,8 @@ export class VirtualMachine {
     /* No.15 */ this._decrement,
     /* No.16 */ this._jump,
     /* No.17 */ this._jumpIf,
+    /* No.18 */ this._declareGlobal,
+    /* No.19 */ this._setGlobal,
+    /* No.20 */ this._getGlobal,
   ];
 }

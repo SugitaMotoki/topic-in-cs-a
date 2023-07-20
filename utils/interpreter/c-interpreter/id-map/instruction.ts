@@ -18,4 +18,7 @@ export const instructionMethodIdMap = new Map<string, number>([
   ["decrement", 15],
   ["jump", 16],
   ["jumpIf", 17],
+  ["declareGlobal", 18],
+  ["setGlobal", 19],
+  ["getGlobal", 20],
 ]);
