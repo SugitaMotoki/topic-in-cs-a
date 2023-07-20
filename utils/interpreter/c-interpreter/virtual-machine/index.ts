@@ -1,4 +1,10 @@
-import { CDataStructure, CVariable, Instruction, Variable } from "../types";
+import {
+  CArray,
+  CDataStructure,
+  CVariable,
+  Instruction,
+  Variable,
+} from "../types";
 export { instructionMethodIdMap } from "../id-map";
 
 /* eslint max-lines: "off" */
@@ -38,6 +44,7 @@ export class VirtualMachine {
       this.methods[instruction.methodId]!(instruction.argments);
       this.pc++;
     }
+    console.log(this.memory);
     return this.output;
   }
 
@@ -246,10 +253,23 @@ export class VirtualMachine {
    * @param {Variable[]} arg - 引数
    */
   private _declareGlobal = (arg: Variable[]) => {
-    const variableId = arg[0] as number;
-    const cTypeId = arg[1] as number;
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
+    const cTypeId = arg[2] as number;
     const address = this.memory.length;
-    this.memory.push({ cType: cTypeId, value: null });
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.memory.push({ cType: cTypeId, value: null });
+        break;
+      case 1: // CArray
+        this.memory.push({
+          cType: cTypeId,
+          value: Array(arg[3] as number).fill(null),
+        });
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
     this.globalVariableMap.set(variableId, address);
   };
 
@@ -259,11 +279,25 @@ export class VirtualMachine {
    * @param {Variable[]} arg - 引数
    */
   private _setGlobal = (arg: Variable[]) => {
-    const variableId = arg[0] as number;
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
     const value = this._pop() as number;
     const address = this.globalVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CVariable;
-    this.memory[address] = { cType: data.cType, value };
+    const data = this.memory[address]! as CDataStructure;
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.memory[address] = { cType: (data as CVariable).cType, value };
+        break;
+      case 1: // CArray
+        (data as CArray).value[arg[2] as number] = value;
+        this.memory[address] = {
+          cType: (data as CArray).cType,
+          value: (data as CArray).value,
+        };
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
   };
 
   /**
@@ -272,13 +306,23 @@ export class VirtualMachine {
    * @param {Variable[]} arg - 引数
    */
   private _getGlobal = (arg: Variable[]) => {
-    const variableId = arg[0] as number;
+    const dataStructureId = arg[0] as number;
+    const variableId = arg[1] as number;
     const address = this.globalVariableMap.get(variableId)!;
-    const data = this.memory[address]! as CVariable;
+    const data = this.memory[address]! as CDataStructure;
     if (data.value === null) {
       throw new Error("not initialized");
     }
-    this.stack.push(data.value);
+    switch (dataStructureId) {
+      case 0: // CVariable
+        this.stack.push(data.value as number);
+        break;
+      case 1: // CArray
+        this.stack.push((data as CArray).value[arg[2] as number]!);
+        break;
+      default:
+        throw new Error(`Invalid data structure id: ${dataStructureId}`);
+    }
   };
 
   /**

@@ -15,6 +15,9 @@ export class Assembler {
   /** 変数の正規表現 */
   public readonly variableRegExp = /^[A-Za-z_]+\w*$/u;
 
+  /** 配列の正規表現 */
+  public readonly arrayRegExp = /^(?<name>[A-Za-z_]+\w*)\[(?<length>\d+)\]$/u;
+
   /**
    * アセンブリコードを独自の機械語に変換する
    * @param {string} assemblyCode
@@ -166,22 +169,34 @@ export class Assembler {
    * @returns {Variable[]}
    */
   private getDeclareGlobalArgment = (
-    cType: string,
-    variable: string,
+    arg1: string, // 変数名
+    arg2: string,
   ): Variable[] => {
-    if (!cTypeIdMap.has(cType)) {
-      throw new Error(`Invalid type: ${cType}`);
-    }
-    const variableName = variable.match(this.variableRegExp);
-    if (variableName) {
-      if (this.globalVariableIdMap.has(variableName[0])) {
-        throw new Error(`Duplicate variable name: ${variableName[0]}`);
+    const variableMatchArray = arg1.match(this.variableRegExp);
+    // 変数の場合
+    if (variableMatchArray) {
+      if (this.globalVariableIdMap.has(variableMatchArray[0])) {
+        throw new Error(`Duplicate variable name: ${variableMatchArray[0]}`);
+      } else if (!cTypeIdMap.has(arg2)) {
+        throw new Error(`Invalid type: ${arg2}`);
       }
-      const index = this.globalVariableIdMap.size;
-      this.globalVariableIdMap.set(variableName[0], index);
-      return [index, cTypeIdMap.get(cType)!];
+      const variableId = this.globalVariableIdMap.size;
+      this.globalVariableIdMap.set(variableMatchArray[0], variableId);
+      return [0, variableId, cTypeIdMap.get(arg2)!];
     }
-    throw new Error(`Invalid variable name: ${variable}`);
+    // 配列の場合
+    const arrayMatchArray = arg1.match(this.arrayRegExp);
+    if (arrayMatchArray) {
+      if (this.globalVariableIdMap.has(arrayMatchArray[1]!)) {
+        throw new Error(`Duplicate variable name: ${arrayMatchArray[1]}`);
+      } else if (!cTypeIdMap.has(arg2)) {
+        throw new Error(`Invalid type: ${arg2}`);
+      }
+      const variableId = this.globalVariableIdMap.size;
+      this.globalVariableIdMap.set(arrayMatchArray[1]!, variableId);
+      return [1, variableId, cTypeIdMap.get(arg2)!, Number(arrayMatchArray[2])];
+    }
+    throw new Error(`Invalid variable name: ${arg2}`);
   };
 
   /**
@@ -190,12 +205,25 @@ export class Assembler {
    * @returns {Variable[]}
    */
   private getUseGlobalArgment = (variable: string): Variable[] => {
-    const variableName = variable.match(this.variableRegExp);
-    if (variableName) {
-      if (this.globalVariableIdMap.has(variableName[0])) {
-        return [this.globalVariableIdMap.get(variableName[0])!];
+    // 変数の場合
+    const variableMatchArray = variable.match(this.variableRegExp);
+    if (variableMatchArray) {
+      if (this.globalVariableIdMap.has(variableMatchArray[0])) {
+        return [0, this.globalVariableIdMap.get(variableMatchArray[0])!];
       }
-      throw new Error(`Undefined variable: ${variableName[0]}`);
+      throw new Error(`Undefined variable: ${variableMatchArray[0]}`);
+    }
+    // 配列の場合
+    const arrayMatchArray = variable.match(this.arrayRegExp);
+    if (arrayMatchArray) {
+      if (this.globalVariableIdMap.has(arrayMatchArray[1]!)) {
+        return [
+          1,
+          this.globalVariableIdMap.get(arrayMatchArray[1]!)!,
+          Number(arrayMatchArray[2]),
+        ];
+      }
+      throw new Error(`Undefined variable: ${arrayMatchArray[1]}`);
     }
     throw new Error(`Invalid variable name: ${variable}`);
   };
