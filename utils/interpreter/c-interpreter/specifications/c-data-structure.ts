@@ -16,10 +16,10 @@ export class CVariable implements CDataStructure {
 
 export class CArray implements CDataStructure {
   readonly cTypeId: number;
-  values: CDataStructure[];
+  values: CVariable[];
 
   constructor(cTypeId: number, length: number) {
     this.cTypeId = cTypeId;
-    this.values = new Array(length).fill(null);
+    this.values = [...Array(length)].map(() => new CVariable(cTypeId));
   }
 }

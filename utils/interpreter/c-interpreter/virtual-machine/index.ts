@@ -276,7 +276,7 @@ export class VirtualMachine {
         this.memory.push(new CVariable(cTypeId));
         break;
       case 1: // CArray
-        this.memory.push(new CArray(cTypeId, length));
+        this.memory.push(new CArray(cTypeId, arg[3] as number));
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
@@ -365,7 +365,7 @@ export class VirtualMachine {
         this.memory.push(new CVariable(cTypeId));
         break;
       case 1: // CArray
-        this.memory.push(new CArray(cTypeId, length));
+        this.memory.push(new CArray(cTypeId, arg[3] as number));
         break;
       default:
         throw new Error(`Invalid data structure id: ${dataStructureId}`);
