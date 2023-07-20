@@ -32,7 +32,7 @@ import { useSampleCodes } from "../composables";
 import { interpreter } from "../utils";
 
 const assemblyCode = ref("");
-assemblyCode.value = useSampleCodes().assembly.jump.nomalJump;
+assemblyCode.value = useSampleCodes().assembly.variable.global.math;
 
 const cInterpreter = new (interpreter().CInterpreter)();
 
