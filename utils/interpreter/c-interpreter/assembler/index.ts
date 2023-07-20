@@ -18,6 +18,11 @@ export class Assembler {
   /** 配列の正規表現 */
   public readonly arrayRegExp = /^(?<name>[A-Za-z_]+\w*)\[(?<length>\d+)\]$/u;
 
+  /** main関数の開始位置となるプログラムカウンタを返す */
+  public getPcOfMainFunction = (): number => {
+    return this.labelIdMap.get("MAIN")!;
+  };
+
   /**
    * アセンブリコードを独自の機械語に変換する
    * @param {string} assemblyCode
@@ -126,6 +131,11 @@ export class Assembler {
         return {
           methodId,
           argments: this.getUseGlobalArgment(lineArray[1]!),
+        };
+      case 24: // call
+        return {
+          methodId,
+          argments: this.getJumpArgment(lineArray[1]!),
         };
       default:
         return {
