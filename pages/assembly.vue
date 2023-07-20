@@ -32,7 +32,7 @@ import { useSampleCodes } from "../composables";
 import { interpreter } from "../utils";
 
 const assemblyCode = ref("");
-assemblyCode.value = useSampleCodes().assembly.functionSampleCodes.add;
+assemblyCode.value = useSampleCodes().assembly.variable.local.math;
 
 const cInterpreter = new (interpreter().CInterpreter)();
 
