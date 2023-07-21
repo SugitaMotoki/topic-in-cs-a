@@ -18,17 +18,6 @@
           </span>
         </v-btn>
       </v-app-bar-title>
-      <v-btn
-        v-for="link in links"
-        :key="link"
-        variant="text"
-        :to="`/${link}`"
-        size="large"
-        nuxt
-      >
-        {{ link }}
-      </v-btn>
-
     </v-container>
   </v-app-bar>
 
@@ -38,8 +27,4 @@
 </template>
 
 <script setup lang="ts">
-const links = [
-  "assembly",
-  "c",
-]
 </script>
