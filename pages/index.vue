@@ -39,9 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { useSampleCodes } from "../composables";
-import { interpreter } from "../utils";
-
 const sampleCodes = useSampleCodes()
 
 const assemblyCode = ref("");
