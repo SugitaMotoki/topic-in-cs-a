@@ -2,7 +2,6 @@
 export default defineNuxtConfig({
   app: {
     baseURL: "/topic-in-cs-a/",
-    cdnURL: "https://sugitamotoki.github.io/topic-in-cs-a/"
   },
 
   devtools: { enabled: true },
